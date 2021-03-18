@@ -11,7 +11,7 @@ URI <- 'https://www.jobplanet.co.kr/users/sign_in'
 # 로그인 정보를 이용하여 HTTP 요청을 합니다. 
 resp <- POST(url = URI,
              body = list('user[email]' = '계정',
-                         'user[password]' = '비밀번호호'))
+                         'user[password]' = '비밀번호'))
 
 # 응답 상태코드를 확인합니다. 200이면 정상입니다.
 status_code(x = resp)
@@ -43,10 +43,33 @@ questions
 ## 원래경로: viewInterviewsList > div > div > section:nth-child(9) > div > div.ctbody_col2 > div > dl > dd:nth-child(2) > span
 
 #마지막페이지
+##한페이지당 5건 밖에 보이지 않기 때문에 
 interviewCnt = resp %>% read_html() %>% html_node(css='#viewCompaniesMenu > ul > li.viewInterviews > a > span') %>% html_text()
 interviewCnt = as.integer(interviewCnt)
 pages=ceiling(interviewCnt / 5)
 pages
+
+
+#함수
+##개별요소들을 데이터프레임으로 변환
+myfunc = function(resp){
+  
+  #회사명
+  company = resp %>% read_html() %>% html_node(css='body > div.body_wrap > div.cmp_hd > div.new_top_bnr > div > div.top_bnr_wrap > div > div > div.company_info_sec > div.company_info_box > div.company_name > h1 > a') %>% html_text()
+  
+  #면접날짜
+  dates = resp %>% read_html() %>% html_nodes(css = 'div.content_top_ty2 > span.txt1 > span.txt2') %>% html_text()
+  dates = gsub('[^0-9]','',dates)
+  
+  #면접질문
+  questions = resp %>% read_html() %>% html_nodes(css = 'div.ctbody_col2 > div > dl > dd:nth-child(2) > span') %>% html_text()
+  questions = gsub(' {2,}','',questions)
+  questions = gsub('\n','',questions)
+  
+  df_page=data.frame(company,dates,questions)
+  
+  return(df_page)
+}
 
 
 # 반복문
@@ -54,6 +77,7 @@ df_interview = data.frame()
 url_interview = 'https://www.jobplanet.co.kr/companies/198924/interviews'
 
 for(page in 1:pages){
+  cat('[', page, '/', pages, '] 진행중... ',fill=TRUE)
   # 첫페이지 경우 url 그대로 반환
   ## 첫페이지는 url뒤에 페이지 번호가 없다
   ifelse(page==1,
@@ -63,21 +87,11 @@ for(page in 1:pages){
   
   resp = GET(url=url_page, config = list(cookies = myCookies))
   status_code(x=resp)
-  
-  resp %>% read_html() %>% html_node(css='body > div.body_wrap > div.cmp_hd > div.new_top_bnr > div > div.top_bnr_wrap > div > div > div.company_info_sec > div.company_info_box > div.company_name > h1 > a') %>% html_text()
-  
-  dates = resp %>% read_html() %>% html_nodes(css = 'div.content_top_ty2 > span.txt1 > span.txt2') %>% html_text()
-  dates = gsub('[^0-9]','',dates)
-  
-  questions = resp %>% read_html() %>% html_nodes(css = 'div.ctbody_col2 > div > dl > dd:nth-child(2) > span') %>% html_text()
-  questions = gsub(' {2,}','',questions)
-  questions = gsub('\n','',questions)
-  
-  df_page=data.frame(dates,questions)
+  myfunc(resp)
   df_interview = rbind(df_interview,df_page)
 }
 
-
+#csv로 저장 및 불러오기, 확인
 write.csv(df_interview,'C:/Work_R/Others/interview.csv')
 data=read.csv('C:/Work_R/Others/interview.csv')
 View(data)
