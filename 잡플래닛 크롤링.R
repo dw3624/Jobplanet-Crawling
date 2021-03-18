@@ -11,8 +11,8 @@ URI <- 'https://www.jobplanet.co.kr/users/sign_in'
 
 # 로그인 정보를 이용하여 HTTP 요청을 합니다. 
 resp <- POST(url = URI,
-             body = list('user[email]' = 'berry1582@yonsei.ac.kr',
-                         'user[password]' = 'kang0905'))
+             body = list('user[email]' = '계정',
+                         'user[password]' = '비밀번호'))
 
 # 응답 상태코드를 확인합니다. 200이면 정상입니다.
 status_code(x = resp)
@@ -21,7 +21,8 @@ status_code(x = resp)
 # 앞으로 HTTP 요청할 때 myCookies를 활용하면 로그인 상태로 HTML을 받을 수 있습니다. 
 myCookies <- set_cookies(.cookies = unlist(x = cookies(x = resp)))
 
-url_madup = 'https://www.jobplanet.co.kr/companies/198924/interviews'
+url_madup = '잡플라넷 기업 면접 페이지'
+# 예) https://www.jobplanet.co.kr/companies/000000/interviews
 resp = GET(url=url_madup, config = list(cookies = myCookies))
 status_code(x=resp)
 
@@ -110,7 +111,8 @@ dim(df_page)
 
 # 반복문
 df_interview = data.frame()
-url_interview = 'https://www.jobplanet.co.kr/companies/198924/interviews'
+url_interview = 'https://www.jobplanet.co.kr/companies/000000/interviews'
+# 예) https://www.jobplanet.co.kr/companies/000000/interviews
 
 for(page in 1:pages){
   cat('[', page, '/', pages, '] 진행중... ',fill=TRUE)
